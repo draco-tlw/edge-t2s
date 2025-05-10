@@ -37,7 +37,7 @@ impl EdgeTTSConfig {
                                 "sentenceBoundaryEnabled": "false",
                                 "wordBoundaryEnabled": "false"
                             }},
-                            "outputFormat": {}
+                            "outputFormat": "{}"
                         }}
                     }}
                 }}

@@ -1,8 +1,12 @@
+use async_trait::async_trait;
 use std::error::Error;
 
 use edge_tts_config::EdgeTTSConfig;
 use futures_util::{SinkExt, StreamExt};
-use http::{HeaderMap, HeaderValue, Uri, header::USER_AGENT};
+use http::{
+    HeaderMap, HeaderValue, Uri,
+    header::{ORIGIN, USER_AGENT},
+};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 use tungstenite::client::IntoClientRequest;
 use url::{ParseError, Url};
@@ -89,6 +93,7 @@ impl EdgeTTS {
     }
 }
 
+#[async_trait]
 impl TTS for EdgeTTS {
     async fn connect(&self) -> Result<TTSSocket, Box<dyn Error>> {
         let url = self.connect_url()?;
@@ -98,7 +103,7 @@ impl TTS for EdgeTTS {
 
         let req_headers = request.headers_mut();
         req_headers.insert(
-            "Origin",
+            ORIGIN,
             HeaderValue::from_static("chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold"),
         );
 
