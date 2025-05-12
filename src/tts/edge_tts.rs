@@ -91,6 +91,18 @@ impl EdgeTTS {
         let ssml = ssml(&self.config, content);
         self.send_ssml(client, ssml).await
     }
+
+    pub fn change_narrator(&mut self, narrator_name: String) {
+        self.config.narrator_name = narrator_name;
+    }
+
+    pub fn change_rate(&mut self, rate: i16) {
+        self.config.rate = rate;
+    }
+
+    pub fn change_pitch(&mut self, pitch: i16) {
+        self.config.pitch = pitch;
+    }
 }
 
 #[async_trait]
