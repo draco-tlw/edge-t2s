@@ -1,3 +1,4 @@
+use narrators::{extract_locales, filter_narrators_by_locale};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
@@ -6,8 +7,9 @@ use std::{
 };
 
 use crate::cli::utils::print::print;
+pub mod narrators;
 
-use super::SETTINGS_PATH;
+pub const SETTINGS_PATH: &str = "settings.json";
 
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
@@ -17,27 +19,53 @@ pub struct Settings {
 }
 
 impl Settings {
+    fn get_locale() -> String {
+        let locales = extract_locales().expect("failed to extract locales from narrators list");
+
+        loop {
+            println!("choose a locale: ");
+
+            for (i, l) in locales.iter().enumerate() {
+                println!("[{i}]: {l}");
+            }
+
+            print("=> ");
+            let mut locale_i = String::new();
+            match stdin().read_line(&mut locale_i) {
+                Err(err) => {
+                    println!("invalid input: {}\n", err);
+                    continue;
+                }
+                _ => (),
+            }
+
+            let i: usize = match locale_i.trim().parse() {
+                Ok(value) => value,
+                Err(err) => {
+                    println!("invalid input: {}\n", err);
+                    continue;
+                }
+            };
+
+            break match locales.get(i) {
+                Some(locale) => locale.to_string(),
+                None => {
+                    println!("invalid input: index {} out of bounds\n", i);
+                    continue;
+                }
+            };
+        }
+    }
+
     fn get_narrator() -> String {
-        let narrators = [
-            "fa-IR-DilaraNeural",
-            "fa-IR-FaridNeural",
-            "en-US-AvaNeural",
-            "en-US-AndrewNeural",
-            "en-US-AnaNeural",
-            "en-US-AriaNeural",
-            "en-US-GuyNeural",
-            "en-GB-LibbyNeural",
-            "en-GB-MaisieNeural",
-            "en-GB-RyanNeural",
-            "en-GB-SoniaNeural",
-            "en-GB-ThomasNeural",
-        ];
+        let locale = Settings::get_locale();
+        let narrators = filter_narrators_by_locale(&locale).expect("failed to read narrators");
 
         loop {
             println!("choose a narrator: ");
 
             for (i, n) in narrators.iter().enumerate() {
-                println!("[{i}]: {n}");
+                println!("[{i}]: {}", n.friendly_name);
             }
 
             print("=> ");
@@ -59,7 +87,7 @@ impl Settings {
             };
 
             break match narrators.get(i) {
-                Some(narrator) => narrator.to_string(),
+                Some(narrator) => narrator.short_name.to_string(),
                 None => {
                     println!("invalid input: index {} out of bounds\n", i);
                     continue;

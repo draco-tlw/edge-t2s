@@ -4,16 +4,14 @@ use edge_t2s::tts::{
     edge_tts::{EdgeTTS, edge_tts_config::EdgeTTSConfig},
 };
 use player::play_mp3;
-use settings::Settings;
+use settings::{SETTINGS_PATH, Settings};
 use std::{error::Error, io::stdin, path::Path};
 use tokio::time::{Duration, sleep};
 use utils::{print::print, to_uf8::to_ut8};
 
 mod player;
-mod settings;
+pub mod settings;
 pub mod utils;
-
-const SETTINGS_PATH: &str = "settings.json";
 
 pub async fn run() {
     if !Path::new(SETTINGS_PATH).exists() {
