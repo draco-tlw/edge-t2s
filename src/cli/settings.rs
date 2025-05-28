@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
-    fs::{self, File},
+    fs::{self},
     io::stdin,
 };
 

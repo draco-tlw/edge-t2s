@@ -4,10 +4,9 @@ use edge_t2s::tts::{
     edge_tts::{EdgeTTS, edge_tts_config::EdgeTTSConfig},
 };
 use player::play_mp3;
-use settings::Settings;
 use std::{error::Error, io::stdin, path::Path};
 use tokio::time::{Duration, sleep};
-use utils::{print::print, to_uf8::to_ut8};
+use utils::print::print;
 
 mod player;
 mod settings;
@@ -89,7 +88,7 @@ pub async fn t2s(settings: &Settings) {
 
 pub async fn listen_to_clipboard(settings: &Settings) {
     let mut clipboard = Clipboard::new().expect("Failed to access clipboard");
-    let mut last_text = clipboard.get_text().unwrap_or(String::new());
+    let mut last_text = String::new();
 
     let tts = EdgeTTS::new(EdgeTTSConfig::new(
         settings.narrator.to_string(),
@@ -99,21 +98,18 @@ pub async fn listen_to_clipboard(settings: &Settings) {
     ));
     let mut client = tts.connect().await.expect("failed to connect to tts!");
 
-    println!("listening to clipboard...");
-
     loop {
         if let Ok(current_text) = clipboard.get_text() {
             if current_text != last_text {
-                println!("Clipboard changed:\n{}", to_ut8(&current_text));
+                println!("Clipboard changed: {}", current_text);
+                last_text = current_text.clone();
 
                 let audio = tts
-                    .send_content(&mut client, to_ut8(&current_text))
+                    .send_content(&mut client, current_text)
                     .await
                     .expect("failed to send content to tts");
 
                 play_mp3(audio);
-
-                last_text = current_text;
             }
         }
 
