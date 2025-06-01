@@ -13,6 +13,21 @@ mod player;
 pub mod settings;
 pub mod utils;
 
+pub async fn t2s(text: String, settings: &Settings) -> Vec<u8> {
+    let tts = EdgeTTS::new(EdgeTTSConfig::new(
+        settings.narrator.to_string(),
+        Some(settings.rate),
+        Some(settings.pitch),
+        None,
+    ));
+    let mut client = tts.connect().await.expect("failed to connect to tts!");
+    let audio = tts
+        .send_content(&mut client, text)
+        .await
+        .expect("failed to send content to tts");
+    audio
+}
+
 pub async fn run() {
     if !Path::new(SETTINGS_PATH).exists() {
         println!("settings does not found!");
@@ -35,7 +50,17 @@ pub async fn run() {
                     .expect("failed to write settings file: {}");
                 settings = Settings::read().expect("failed to read the settings file");
             }
-            "2" => t2s(&settings).await,
+            "2" => {
+                println!("text: ");
+                let mut text = String::new();
+                stdin()
+                    .read_line(&mut text)
+                    .expect("failed to read the input");
+
+                let text = text.trim().to_string();
+                let audio = t2s(text, &settings).await;
+                play_mp3(audio);
+            }
             "3" => listen_to_clipboard(&settings).await,
             _ => {
                 println!("invalid input!");
@@ -61,41 +86,9 @@ pub fn menu() -> Result<String, Box<dyn Error>> {
     Ok(choice.trim().to_string())
 }
 
-pub async fn t2s(settings: &Settings) {
-    println!("text: ");
-    let mut text = String::new();
-    stdin()
-        .read_line(&mut text)
-        .expect("failed to read the input");
-
-    let text = text.trim().to_string();
-
-    let tts = EdgeTTS::new(EdgeTTSConfig::new(
-        settings.narrator.to_string(),
-        Some(settings.rate),
-        Some(settings.pitch),
-        None,
-    ));
-    let mut client = tts.connect().await.expect("failed to connect to tts!");
-    let audio = tts
-        .send_content(&mut client, text)
-        .await
-        .expect("failed to send content to tts");
-
-    play_mp3(audio);
-}
-
 pub async fn listen_to_clipboard(settings: &Settings) {
     let mut clipboard = Clipboard::new().expect("Failed to access clipboard");
     let mut last_text = clipboard.get_text().unwrap_or(String::new());
-
-    let tts = EdgeTTS::new(EdgeTTSConfig::new(
-        settings.narrator.to_string(),
-        Some(settings.rate),
-        Some(settings.pitch),
-        None,
-    ));
-    let mut client = tts.connect().await.expect("failed to connect to tts!");
 
     println!("listening to clipboard...");
 
@@ -104,11 +97,7 @@ pub async fn listen_to_clipboard(settings: &Settings) {
             if current_text != last_text {
                 println!("Clipboard changed:\n{}", to_ut8(&current_text));
 
-                let audio = tts
-                    .send_content(&mut client, to_ut8(&current_text))
-                    .await
-                    .expect("failed to send content to tts");
-
+                let audio = t2s(to_ut8(&current_text), settings).await;
                 play_mp3(audio);
 
                 last_text = current_text;
